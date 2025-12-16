@@ -11,7 +11,7 @@ This is where liveness detection comes in a technology designed to protect ident
 <br>
 <br>
 
-![Liveness Detection Image](./liveness_detection_demo.gif)
+![Liveness Detection Image](https://raw.githubusercontent.com/horlengg/liveness_detection/dev/liveness_detection_demo.gif)
 
 <br>
 
@@ -508,7 +508,7 @@ This tutorial demonstrated how to detect live human presence using the built-in 
 
 ## 📦 Full Source Code
 
-You can find the complete source code and example implementation on GitHub:  [https://github.com/horlengg/implement_liveness_detection](https://github.com/horlengg/implement_liveness_detection)
+You can find the complete source code and example implementation on GitHub:  [https://github.com/horlengg/liveness_detection](https://github.com/horlengg/liveness_detection)
 
 <br><br>
 
