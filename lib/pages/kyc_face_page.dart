@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:sample_liveness_app/models/camera_stream_payload.dart';
-import 'package:sample_liveness_app/widgets/common.dart';
+import 'package:sample_liveness_app/widgets/button.dart';
 import 'package:image/image.dart' as img;
 
 class KYCFacePage extends StatelessWidget {
@@ -62,10 +62,14 @@ class KYCFacePage extends StatelessWidget {
               ),
         
               SizedBox(height: 30),
-        
-              buildButton('Back Home', () { 
+              AppButton(
+                onPressed: () {
                 Navigator.popUntil(context, (route) => route.settings.name == '/');
-              })
+
+                },
+                label: "Back Home",
+                radius: 0,
+              ),
         
             ],
           ),

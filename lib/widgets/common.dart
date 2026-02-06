@@ -1,24 +1,8 @@
 
 import 'dart:io';
 
-import 'package:flutter/material.dart';
-
 import 'package:camera/camera.dart';
-import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart';
-
-ElevatedButton buildButton(String title,void Function()? tap){
-  return ElevatedButton(
-    onPressed: tap, 
-    style: ElevatedButton.styleFrom(
-      padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 12),
-      backgroundColor: Colors.blueAccent,
-      foregroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0))
-    ),
-    child: Text(title)
-  );
-}
 
 class CameraYUVConverter {
   /// Converts CameraImage to NV21 bytes (what your native code expects)

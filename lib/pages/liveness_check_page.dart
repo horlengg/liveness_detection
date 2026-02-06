@@ -322,7 +322,7 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
       backgroundColor: Color(0xFFC7D9E9),
       appBar: AppBar(
         title: Text("Sample Liveness Check",style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: const Color(0xFF035F9E),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

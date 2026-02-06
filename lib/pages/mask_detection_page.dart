@@ -123,7 +123,7 @@ class _MaskDetectionPageState extends State<MaskDetectionPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Sample Mask Detection",style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: const Color(0xFF035F9E),
       ),
       backgroundColor: Colors.white.withValues(alpha: .8),
       body: SafeArea(

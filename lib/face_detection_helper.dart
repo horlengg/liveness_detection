@@ -19,71 +19,6 @@ class FaceDetectionHelper {
 
   static List<Challenge> getChallengeList(){
     final challengeList = [
-      // Challenge(
-      //   "Please smile",
-      //   "smile.png",
-      //   (face) {
-      //     const threshold = 0.5;
-      //     final smileProb = face.smilingProbability;
-      //     log("smilingProbability : $smileProb");
-      //     return smileProb != null && smileProb >= threshold;
-      //   },
-        
-      // ),
-      // Challenge(
-      //   "Please blink slowly",
-      //   (face) {
-      //     final leftCurrent = face.leftEyeOpenProbability ?? 0.0;
-      //     final rightCurrent = face.rightEyeOpenProbability ?? 0.0;
-
-      //     bool isBlink(double? previous, double current) {
-      //       return previous != null && previous > 0.5 && current < 0.1;
-      //     }
-
-      //     final blinkDetected = isBlink(_lastLeftEyeOpen, leftCurrent) && isBlink(_lastRightEyeOpen, rightCurrent);
-
-      //     // Update AFTER detection
-      //     _lastLeftEyeOpen = leftCurrent;
-      //     _lastRightEyeOpen = rightCurrent;
-
-      //     log("Blink detected: $blinkDetected");
-      //     return blinkDetected;
-      //   }
-      // ),
-      // Challenge(
-      //   "Please look left",
-      //   (face) {
-      //     final headEulerAngleY = face.headEulerAngleY ?? 0;
-      //     log("headEulerAngleY :::: $headEulerAngleY");
-      //     return headEulerAngleY > 10;
-      //   },
-      // ),
-      // Challenge(
-      //   "Please look right",
-      //   (face) {
-      //     final headEulerAngleY = face.headEulerAngleY ?? 0;
-      //     log("headEulerAngleY :::: $headEulerAngleY");
-      //     return headEulerAngleY < -10;
-      //   },
-      // ),
-      // Challenge(
-      //   "Please look down",
-      //   "look_down.png",
-      //   (face) {
-      //     final headEulerAngleX = face.headEulerAngleX ?? 0;
-      //     log("headEulerAngleX :::: $headEulerAngleX");
-      //     return headEulerAngleX < -10;
-      //   },
-      // ),
-      // Challenge(
-      //   "Please look up",
-      //   "look_up.png",
-      //   (face) {
-      //     final headEulerAngleX = face.headEulerAngleX ?? 0;
-      //     log("headEulerAngleX :::: $headEulerAngleX");
-      //     return headEulerAngleX > 10;
-      //   },
-      // ),
       Challenge(
         "Please blink slowly",
         "blink.png",
@@ -199,3 +134,69 @@ class FaceDetectionHelper {
   }
 
 }
+
+// Challenge(
+      //   "Please smile",
+      //   "smile.png",
+      //   (face) {
+      //     const threshold = 0.5;
+      //     final smileProb = face.smilingProbability;
+      //     log("smilingProbability : $smileProb");
+      //     return smileProb != null && smileProb >= threshold;
+      //   },
+        
+      // ),
+      // Challenge(
+      //   "Please blink slowly",
+      //   (face) {
+      //     final leftCurrent = face.leftEyeOpenProbability ?? 0.0;
+      //     final rightCurrent = face.rightEyeOpenProbability ?? 0.0;
+
+      //     bool isBlink(double? previous, double current) {
+      //       return previous != null && previous > 0.5 && current < 0.1;
+      //     }
+
+      //     final blinkDetected = isBlink(_lastLeftEyeOpen, leftCurrent) && isBlink(_lastRightEyeOpen, rightCurrent);
+
+      //     // Update AFTER detection
+      //     _lastLeftEyeOpen = leftCurrent;
+      //     _lastRightEyeOpen = rightCurrent;
+
+      //     log("Blink detected: $blinkDetected");
+      //     return blinkDetected;
+      //   }
+      // ),
+      // Challenge(
+      //   "Please look left",
+      //   (face) {
+      //     final headEulerAngleY = face.headEulerAngleY ?? 0;
+      //     log("headEulerAngleY :::: $headEulerAngleY");
+      //     return headEulerAngleY > 10;
+      //   },
+      // ),
+      // Challenge(
+      //   "Please look right",
+      //   (face) {
+      //     final headEulerAngleY = face.headEulerAngleY ?? 0;
+      //     log("headEulerAngleY :::: $headEulerAngleY");
+      //     return headEulerAngleY < -10;
+      //   },
+      // ),
+      // Challenge(
+      //   "Please look down",
+      //   "look_down.png",
+      //   (face) {
+      //     final headEulerAngleX = face.headEulerAngleX ?? 0;
+      //     log("headEulerAngleX :::: $headEulerAngleX");
+      //     return headEulerAngleX < -10;
+      //   },
+      // ),
+      // Challenge(
+      //   "Please look up",
+      //   "look_up.png",
+      //   (face) {
+      //     final headEulerAngleX = face.headEulerAngleX ?? 0;
+      //     log("headEulerAngleX :::: $headEulerAngleX");
+      //     return headEulerAngleX > 10;
+      //   },
+      // ),

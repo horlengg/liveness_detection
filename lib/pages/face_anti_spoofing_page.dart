@@ -100,7 +100,7 @@ class _FaceAntiSpoofingPageState extends State<FaceAntiSpoofingPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Sample Face Anti Spoofing", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: const Color(0xFF035F9E),
       ),
       backgroundColor: Colors.white.withValues(alpha: .8),
       body: SafeArea(

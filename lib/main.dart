@@ -71,12 +71,13 @@ class HomePage extends StatelessWidget {
       backgroundColor: Color(0xFFC7D9E9),
       appBar: AppBar(
         title: Text("Sample Liveness Check",style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: const Color(0xFF035F9E),
       ),
       body: SafeArea(
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            spacing: 20,
             children: [
               SizedBox(height: 20),
 
@@ -84,7 +85,22 @@ class HomePage extends StatelessWidget {
                 onPressed: () {
                   Navigator.pushNamed(context, "/do_liveness");
                 },
-                label: "Start",
+                label: "Start Liveness Detection",
+                radius: 0,
+              ),
+              AppButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, "/do_mask_detection");
+                },
+                label: "Start Mask Detection",
+                radius: 0,
+              ),
+              AppButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, "/do_face_anti_spoofing");
+                },
+                label: "Start Face Anti Spoofing",
+                radius: 0,
               ),
 
 
