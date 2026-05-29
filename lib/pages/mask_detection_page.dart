@@ -7,8 +7,10 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:mask_detector/mask_detector.dart';
 import 'package:mask_detector/models/mask_detection_result.dart';
 import 'package:sample_liveness_app/models/camera_stream_payload.dart';
+import 'package:sample_liveness_app/models/model_type.dart';
 import 'package:sample_liveness_app/widgets/camera_view.dart';
 import 'package:sample_liveness_app/widgets/face_detector_painter.dart';
+import 'package:sample_liveness_app/widgets/result_view.dart';
 
 
 
@@ -28,6 +30,8 @@ class _MaskDetectionPageState extends State<MaskDetectionPage> {
   bool _maskDetectorInitialized = false;
   CustomPaint? _customPaint;
   bool _isWidgetDestroyed = false;
+  Map<ModelType,int?> _dims = {};
+
 
 
   final GlobalKey<CameraViewState> _cameraViewKey = GlobalKey();
@@ -40,11 +44,17 @@ class _MaskDetectionPageState extends State<MaskDetectionPage> {
     final startAt = DateTime.now();
     try {
 
+      _dims = {};
+
       final faces = await _faceDetector.processImage(payload.inputImage);
       if(faces.isEmpty) {
         isNoFaceDetected = true;
+        _customPaint = null;
         throw Exception("No face detected");
       }
+
+      _dims[ModelType.googleMLKit] = DateTime.now().difference(startAt).inMilliseconds;
+
 
       isNoFaceDetected = false;
 
@@ -65,16 +75,20 @@ class _MaskDetectionPageState extends State<MaskDetectionPage> {
         imageWidth: payload.imageWidth.toDouble(),
         imageHeight: payload.imageHeight.toDouble(),
         faceCountour: faceContour,
-        rotation: payload.rotation
+        rotation: payload.rotation,
+        bytesPerRow: payload.bytesPerRow
       );
-      log("data : $_maskResult");
+      final total = DateTime.now().difference(startAt).inMilliseconds;
+      _dims[ModelType.maskDetector] = total - (_dims[ModelType.googleMLKit] ?? 0);
+      print("data : $_maskResult");
     }
     catch (e){
       _maskResult = null;
+      _dims = {};
       log("Error while detect mask : $e");
     } finally {
       log("========> Duration : ${DateTime.now().difference(startAt).inMilliseconds} ms");
-      setState(() {});
+      if(mounted) setState(() {});
     }
   }
 
@@ -122,72 +136,61 @@ class _MaskDetectionPageState extends State<MaskDetectionPage> {
     _screenSize = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
-        title: Text("Sample Mask Detection",style: TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF035F9E),
+        title: Text("Mask Detection"),
       ),
-      backgroundColor: Colors.white.withValues(alpha: .8),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            const SizedBox(height: 40),
-            const Text(
-              "Mask Detection",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.blueGrey,
-                letterSpacing: 2
-              ),
-            ),
-            const SizedBox(height: 50),
-            Center(
-              child: SizedBox(
-                width: _screenSize!.width * .9,
-                height: _screenSize!.width * .9,
-                child: CameraView(
-                  key: _cameraViewKey,
-                  onImage: _handleDetectMask,
-                  customPaint: _customPaint,
-                  cameraStreamProcessDelay: const Duration(milliseconds: 200),
+            Positioned.fill(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 40),
+                    const Text(
+                      "Mask Detection",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 2
+                      ),
+                    ),
+                    const SizedBox(height: 50),
+                    Center(
+                      child: SizedBox(
+                        width: _screenSize!.width * .9,
+                        height: _screenSize!.width * .9,
+                        child: CameraView(
+                          key: _cameraViewKey,
+                          onImage: _handleDetectMask,
+                          customPaint: _customPaint,
+                          cameraStreamProcessDelay: const Duration(milliseconds: 200),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 40),
-            _buildResponse()
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: ResultView(
+                  fields: {
+                    "Result : " : _maskResult == null ? "N/A" : _maskResult!.hasMask ? "Mask" : "No Mask",
+                    "Score :" : _maskResult == null ? "N/A" :  _maskResult!.confidenceScore,
+                  },
+                  dims: _dims,
+                  w: _screenSize!.width,
+                ),
+              ),
+            ),
           ],
         ),
       ),
-    );
-  }
-  Widget _buildResponse(){
-    if(isNoFaceDetected){
-      return Text(
-        "No face detected!.",
-        style: TextStyle(
-          color: Colors.red,
-          fontSize: 20
-        ),
-    );
-    }
-    if(_maskResult == null) return SizedBox.shrink();
-    String msg = _maskResult!.hasMask ? "Has Mask" : "No Mask";
-    Color color = _maskResult!.hasMask ? Colors.red : Colors.green;
-    return Column(
-      children: [
-        Text(
-          msg,
-          style: TextStyle(
-            color: color,
-            fontSize: 20
-          ),
-        ),
-        Text(
-          "Confidence Score : ${_maskResult!.hasMask ? _maskResult!.withMaskScore : _maskResult!.withoutMaskScore}",
-          style: TextStyle(
-            color: color
-          ),
-        )
-      ],
     );
   }
 }

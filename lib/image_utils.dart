@@ -1,0 +1,300 @@
+
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:image/image.dart' as img;
+import 'package:camera/camera.dart';
+
+class ImageUtils {
+  /// Converts CameraImage to NV21 bytes (what your native code expects)
+  // static Uint8List convertToNV21(CameraImage image, {bool debug = false}) {
+    
+  //   if (Platform.isAndroid) {
+  //     if (image.format.group == ImageFormatGroup.yuv420) {
+  //       return _convertYUV420ToNV21(image, debug: debug);
+  //     } else if (image.format.group == ImageFormatGroup.nv21) {
+  //       return _convertNV21Direct(image, debug: debug);
+  //     } else {
+  //       throw UnsupportedError('Unsupported Android format: ${image.format.group}');
+  //     }
+  //   } else if (Platform.isIOS) {
+  //     return _convertBGRA8888ToNV21(image, debug: debug);
+  //   }
+  //   throw UnsupportedError('Unsupported platform');
+  // }
+
+  /// Android: When format is already NV21 - just concatenate
+  static Uint8List _convertNV21Direct(CameraImage image, {bool debug = false}) {
+    final int width = image.width;
+    final int height = image.height;
+    final int ySize = width * height;
+    final int uvSize = (width * height) ~/ 2;
+    
+    // if (debug) {
+    //   print('NV21 Direct conversion');
+    //   print('Expected - Y: $ySize, UV: $uvSize');
+    // }
+    
+    final Uint8List nv21 = Uint8List(ySize + uvSize);
+    
+    final yPlane = image.planes[0];
+    final uvPlane = image.planes[1];
+    final yRowStride = yPlane.bytesPerRow;
+    final uvRowStride = uvPlane.bytesPerRow;
+    
+    int nv21Index = 0;
+    for (int row = 0; row < height; row++) {
+      int offset = row * yRowStride;
+      for (int col = 0; col < width; col++) {
+        nv21[nv21Index++] = yPlane.bytes[offset + col];
+      }
+    }
+    
+    // Copy UV plane (handle stride)
+    int uvHeight = height ~/ 2;
+    for (int row = 0; row < uvHeight; row++) {
+      int offset = row * uvRowStride;
+      for (int col = 0; col < width; col++) {
+        nv21[nv21Index++] = uvPlane.bytes[offset + col];
+      }
+    }
+    
+    return nv21;
+  }
+
+  static Uint8List _convertYUV420ToNV21(CameraImage image, {bool debug = false}) {
+    final int width = image.width;
+    final int height = image.height;
+    final int ySize = width * height;
+    final int uvSize = (width * height) ~/ 2;
+    
+    // if (debug) {
+    //   print('YUV420 to NV21 conversion');
+    //   print('Expected - Y: $ySize, UV: $uvSize, Total: ${ySize + uvSize}');
+    // }
+    
+    final Uint8List nv21 = Uint8List(ySize + uvSize);
+    
+    final yPlane = image.planes[0];
+    final yRowStride = yPlane.bytesPerRow;
+    
+    int nv21Index = 0;
+    for (int row = 0; row < height; row++) {
+      int offset = row * yRowStride;
+      for (int col = 0; col < width; col++) {
+        nv21[nv21Index++] = yPlane.bytes[offset + col];
+      }
+    }
+    
+    if (debug) {
+      print('Y plane copied: $nv21Index bytes');
+    }
+    
+    final uPlane = image.planes[1];
+    final vPlane = image.planes[2];
+    final uRowStride = uPlane.bytesPerRow;
+    final vRowStride = vPlane.bytesPerRow;
+    final uvPixelStride = uPlane.bytesPerPixel ?? 1;
+    
+    final int uvHeight = height ~/ 2;
+    final int uvWidth = width ~/ 2;
+    
+    // if (debug) {
+    //   print('UV dimensions: ${uvWidth}x${uvHeight}');
+    //   print('U rowStride: $uRowStride, pixelStride: $uvPixelStride');
+    //   print('V rowStride: $vRowStride');
+    // }
+    
+    for (int row = 0; row < uvHeight; row++) {
+      int uRowOffset = row * uRowStride;
+      int vRowOffset = row * vRowStride;
+      
+      for (int col = 0; col < uvWidth; col++) {
+        // Handle pixel stride - UV planes may be interleaved already
+        int uIndex = uRowOffset + col * uvPixelStride;
+        int vIndex = vRowOffset + col * uvPixelStride;
+        
+        // NV21 is VU interleaved (V first, then U)
+        nv21[nv21Index++] = vPlane.bytes[vIndex]; // V
+        nv21[nv21Index++] = uPlane.bytes[uIndex]; // U
+      }
+    }
+    
+    // if (debug) {
+    //   print('Total written: $nv21Index bytes (expected: ${ySize + uvSize})');
+      
+    //   if (nv21Index != ySize + uvSize) {
+    //     print('⚠️ WARNING: Size mismatch! Expected ${ySize + uvSize}, got $nv21Index');
+    //   } else {
+    //     print('✅ Conversion successful!');
+    //   }
+    // }
+    
+    return nv21;
+  }
+
+  /// iOS: Convert BGRA8888 to NV21
+  // static Uint8List _convertBGRA8888ToNV21(CameraImage image, {bool debug = false}) {
+  //   final int width = image.width;
+  //   final int height = image.height;
+  //   final int expectedSize = (width * height * 3) ~/ 2;
+    
+  //   if (debug) {
+  //     print('BGRA to NV21 - Expected size: $expectedSize');
+  //   }
+    
+  //   final Uint8List nv21 = Uint8List(expectedSize);
+  //   final Uint8List bgra = image.planes[0].bytes;
+  //   final int bytesPerRow = image.planes[0].bytesPerRow;
+  //   final int bytesPerPixel = 4; // BGRA = 4 bytes
+    
+  //   int yIndex = 0;
+  //   int uvIndex = width * height;
+    
+  //   // Convert BGRA to YUV
+  //   for (int row = 0; row < height; row++) {
+  //     for (int col = 0; col < width; col++) {
+  //       final int offset = row * bytesPerRow + col * bytesPerPixel;
+        
+  //       final int b = bgra[offset];
+  //       final int g = bgra[offset + 1];
+  //       final int r = bgra[offset + 2];
+        
+  //       // Calculate Y (luminance)
+  //       final int y = ((66 * r + 129 * g + 25 * b + 128) >> 8) + 16;
+  //       nv21[yIndex++] = y.clamp(0, 255);
+        
+  //       // Calculate U and V for every 2x2 block (subsample)
+  //       if (row % 2 == 0 && col % 2 == 0 && uvIndex < expectedSize - 1) {
+  //         final int u = ((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128;
+  //         final int v = ((112 * r - 94 * g - 18 * b + 128) >> 8) + 128;
+          
+  //         // NV21 format: VU interleaved
+  //         nv21[uvIndex++] = v.clamp(0, 255);
+  //         nv21[uvIndex++] = u.clamp(0, 255);
+  //       }
+  //     }
+  //   }
+    
+  //   if (debug) {
+  //     print('Y written: $yIndex, UV written: ${uvIndex - width * height}');
+  //   }
+    
+  //   return nv21;
+  // }
+
+  static Uint8List convertForPlatform(CameraImage image, {bool debug = false}) {
+    if (Platform.isAndroid) {
+      if (image.format.group == ImageFormatGroup.yuv420) {
+        return _convertYUV420ToNV21(image, debug: debug);
+      } else if (image.format.group == ImageFormatGroup.nv21) {
+        return _convertNV21Direct(image, debug: debug);
+      }
+      throw UnsupportedError('Unsupported Android format: ${image.format.group}');
+    } else if (Platform.isIOS) {
+      // Return raw BGRA bytes — no conversion, Swift handles it
+      if (debug) {
+        print('iOS BGRA passthrough: ${image.width}x${image.height}, '
+              'bytesPerRow: ${image.planes[0].bytesPerRow}');
+      }
+      return image.planes[0].bytes;
+    }
+    throw UnsupportedError('Unsupported platform');
+  }
+
+  static Future<Uint8List?> cameraImageToPng({
+    required CameraImage cameraImage,
+    int rotation = 0,
+    bool flipHorizontal = false,
+  }) async {
+    try {
+      img.Image image;
+
+      if (cameraImage.format.group == ImageFormatGroup.yuv420) {
+        // Android path — your existing YUV logic
+        image = convertYuv420(cameraImage);
+      } else if (cameraImage.format.group == ImageFormatGroup.bgra8888) {
+        // iOS path — single BGRA plane
+        image = convertBgra8888(cameraImage);
+      } else {
+        print('Unsupported format: ${cameraImage.format.group}');
+        return null;
+      }
+
+      if (Platform.isAndroid && rotation != 0) {
+        image = img.copyRotate(image, angle: rotation);
+      }
+      if (flipHorizontal) {
+        image = img.flipHorizontal(image);
+      }
+
+      return Uint8List.fromList(img.encodePng(image));
+    } catch (e) {
+      print('Error converting camera image to PNG: $e');
+      return null;
+    }
+  }
+
+  static img.Image convertYuv420(CameraImage cameraImage) {
+    final int width = cameraImage.width;
+    final int height = cameraImage.height;
+
+    final int yRowStride = cameraImage.planes[0].bytesPerRow;
+    final int uvRowStride = cameraImage.planes[1].bytesPerRow;
+    final int uvPixelStride = cameraImage.planes[1].bytesPerPixel ?? 1;
+
+    final Uint8List yPlane = cameraImage.planes[0].bytes;
+    final Uint8List uPlane = cameraImage.planes[1].bytes;
+    final Uint8List vPlane = cameraImage.planes[2].bytes;
+
+    final image = img.Image(width: width, height: height);
+
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        final int yIndex = y * yRowStride + x;
+        final int uvIndex = (y ~/ 2) * uvRowStride + (x ~/ 2) * uvPixelStride;
+
+        if (yIndex >= yPlane.length || uvIndex >= uPlane.length || uvIndex >= vPlane.length) {
+          continue;
+        }
+
+        final int yValue = yPlane[yIndex] & 0xFF;
+        final int uValue = uPlane[uvIndex] & 0xFF;
+        final int vValue = vPlane[uvIndex] & 0xFF;
+
+        final int r = (yValue + 1.402 * (vValue - 128)).round().clamp(0, 255);
+        final int g = (yValue - 0.344136 * (uValue - 128) - 0.714136 * (vValue - 128)).round().clamp(0, 255);
+        final int b = (yValue + 1.772 * (uValue - 128)).round().clamp(0, 255);
+
+        image.setPixelRgb(x, y, r, g, b);
+      }
+    }
+    return image;
+  }
+
+  static img.Image convertBgra8888(CameraImage cameraImage) {
+    final int width = cameraImage.width;
+    final int height = cameraImage.height;
+    final Uint8List bytes = cameraImage.planes[0].bytes;
+    final int bytesPerRow = cameraImage.planes[0].bytesPerRow;
+
+    final image = img.Image(width: width, height: height);
+
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        final int pixelIndex = y * bytesPerRow + x * 4;
+
+        if (pixelIndex + 3 >= bytes.length) continue;
+
+        // BGRA → RGB (swap B and R, drop A)
+        final int b = bytes[pixelIndex] & 0xFF;
+        final int g = bytes[pixelIndex + 1] & 0xFF;
+        final int r = bytes[pixelIndex + 2] & 0xFF;
+
+        image.setPixelRgb(x, y, r, g, b);
+      }
+    }
+    return image;
+  }
+
+
+}

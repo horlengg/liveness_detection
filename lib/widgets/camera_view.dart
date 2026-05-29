@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_commons/google_mlkit_commons.dart';
 import 'package:sample_liveness_app/face_detection_helper.dart';
+import 'package:sample_liveness_app/image_utils.dart';
 import 'package:sample_liveness_app/models/camera_stream_payload.dart';
-import 'package:sample_liveness_app/widgets/common.dart';
 
 
 class CameraView extends StatefulWidget {
@@ -127,7 +127,7 @@ class CameraViewState extends State<CameraView> with SingleTickerProviderStateMi
     
     _controller = CameraController(
       camera,
-      ResolutionPreset.medium,
+      ResolutionPreset.high,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.nv21
     );
@@ -171,7 +171,8 @@ class CameraViewState extends State<CameraView> with SingleTickerProviderStateMi
 
     final rotation = _getCameraRotation();
 
-    final yuvBytes = CameraYUVConverter.convertToNV21(image);
+    final yuvBytes = ImageUtils.convertForPlatform(image);
+
     
     
     final payload = CameraStreamPayload(
@@ -180,7 +181,8 @@ class CameraViewState extends State<CameraView> with SingleTickerProviderStateMi
       imageWidth  : image.width,
       imageHeight : image.height,
       rotation    : rotation,
-      cameraImage : image
+      cameraImage : image,
+      bytesPerRow : image.planes[0].bytesPerRow
     );
     widget.onImage(payload);
 
@@ -388,7 +390,7 @@ class CornerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.lightBlue
+      ..color = Colors.white
       ..strokeWidth = 4
       ..style = PaintingStyle.stroke;
 

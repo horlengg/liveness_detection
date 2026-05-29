@@ -43,11 +43,16 @@ dependencies:
   google_mlkit_commons: ^0.11.0
   google_mlkit_face_detection: ^0.13.1
   image: ^4.5.4
-  face_anti_spoofing_detector: ^0.0.4
+  # face_anti_spoofing_detector: ^0.0.4
   mask_detector :
-    git:
-        url: https://github.com/horlengg/mask_detector.git
-  # face_contour_detector: ^0.0.2
+  #   # git:
+  #       # url: https://github.com/horlengg/mask_detector.git
+    path : /Users/ly.houleng/Desktop/publish_libs/mask_detector
+  face_anti_spoofing_detector:
+    path : /Users/ly.houleng/Desktop/publish_libs/liveness_detector
+    # git:
+    #   url: https://github.com/andikatp/liveness.git
+    #   ref: main
   fluttertoast: ^9.0.0
   sensors_plus: ^7.0.0
   flutter_launcher_icons: ^0.14.4

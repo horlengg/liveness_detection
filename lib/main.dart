@@ -16,6 +16,22 @@ class SampleLivenessApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        scaffoldBackgroundColor: const Color(0xFF000F28),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF035F9E),
+          foregroundColor: Colors.white, // controls title & icon colors
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        textTheme: Typography.material2021().black.apply(
+          bodyColor: Colors.white,
+          displayColor: Colors.white,
+        ),
+      ),
       initialRoute: '/',
       onGenerateRoute: (settings) {
         Widget page;
@@ -68,10 +84,8 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFC7D9E9),
       appBar: AppBar(
-        title: Text("Sample Liveness Check",style: TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF035F9E),
+        title: Text("Liveness Detection Exploration"),
       ),
       body: SafeArea(
         child: Center(

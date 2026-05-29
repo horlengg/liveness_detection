@@ -11,9 +11,12 @@ import 'package:sample_liveness_app/face_detection_helper.dart';
 import 'package:sample_liveness_app/models/Liveness_check_exception.dart';
 import 'package:sample_liveness_app/models/camera_stream_payload.dart';
 import 'package:sample_liveness_app/device_motion_detector.dart';
+import 'package:sample_liveness_app/models/model_type.dart';
 import 'package:sample_liveness_app/pages/kyc_face_page.dart';
 import 'package:sample_liveness_app/widgets/camera_view.dart';
 import 'dart:async';
+
+import 'package:sample_liveness_app/widgets/result_view.dart';
 
 // import 'package:sample_liveness_app/widgets/rotation_border.dart';
 
@@ -45,12 +48,13 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
   DateTime?  _userValidationValidAt;
   bool _isWidgetDestroyed = false;
   bool _isSkipFrame = false;
+  Map<ModelType,int?> _dims = {};
 
 
   final GlobalKey<CameraViewState> _cameraViewKey = GlobalKey();
 
 
-  void _initDetection(){
+  void _initDetection() async {
     _faceDetector = FaceDetector(
       options: FaceDetectorOptions(
         performanceMode: FaceDetectorMode.accurate,
@@ -60,8 +64,8 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
         minFaceSize: 0.3
       ),
     );
-    FaceAntiSpoofingDetector.initialize();
-    MaskDetector.initialize();
+    await FaceAntiSpoofingDetector.initialize();
+    await MaskDetector.initialize();
   }
 
   @override
@@ -93,18 +97,18 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
 
   @override
   void dispose() {
+    super.dispose();
     _isWidgetDestroyed = true;
     _faceDetector.close();
     MaskDetector.destroy();
     FaceAntiSpoofingDetector.destroy();
-    super.dispose();
     DeviceMotionDetector.instance.destroy();
-    // SystemChrome.setPreferredOrientations([
-    //   DeviceOrientation.portraitUp,
-    //   DeviceOrientation.portraitDown,
-    //   DeviceOrientation.landscapeLeft,
-    //   DeviceOrientation.landscapeRight,
-    // ]);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     BlinkDetector.instance.reset();
     timer?.cancel();
   }
@@ -178,7 +182,7 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
     log("_objectId : ${face.trackingId} , isCompleted : $isCompleted");
 
     if(!isCompleted){
-      throw Exception(request.instruction);
+      throw Exception("[CHALLENG_FAILED]${request.instruction}");
     }
 
     // Check face whether it match to to prevouse face or not exclude first step
@@ -239,9 +243,13 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
 
     try {
 
-      final startDate = DateTime.now();
+      final startAt = DateTime.now();
+      _dims = {};
 
       final faces = await _faceDetector.processImage(payload.inputImage);
+
+      _dims[ModelType.googleMLKit] = DateTime.now().difference(startAt).inMilliseconds;
+
       // 
       _faceValidation(faces);
 
@@ -253,8 +261,12 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
         imageWidth: payload.imageWidth.toDouble(), 
         imageHeight: payload.imageHeight.toDouble(), 
         faceCountour: faceContour,
-        rotation: payload.rotation
+        rotation: payload.rotation, 
+        bytesPerRow: payload.bytesPerRow
       );
+
+      final total = DateTime.now().difference(startAt).inMilliseconds;
+      _dims[ModelType.maskDetector] = total - (_dims[ModelType.googleMLKit] ?? 0);
 
       if(maskResult.hasMask){
         throw LivenessCheckException("Please turn off your mask!.");
@@ -267,13 +279,16 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
         orientation: 7, 
         faceContour: faceContour
       );
+
+      final finalDuration = DateTime.now().difference(startAt).inMilliseconds;
+      _dims[ModelType.faceAntiSpoofingDetector] = finalDuration - (_dims[ModelType.maskDetector] ?? 0);
       
       if(confidenceScore == null || confidenceScore < .95){
         throw LivenessCheckException("A real person is required for liveness verification.");
       }
       
       log("============================");
-      log("duration : ${DateTime.now().difference(startDate).inMilliseconds} ms");
+      log("duration : ${DateTime.now().difference(startAt).inMilliseconds} ms");
       log("============================");
 
       // capture face
@@ -301,7 +316,9 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
       BlinkDetector.instance.reset();
       _userValidationValidAt = null;
     } catch (e) {
-      log("Error : $e");
+      if(e is String && !e.startsWith("[CHALLENG_FAILED]")){
+        _dims = {};
+      }
       _warningMsg = null;
     } finally {
       _isDetectionOnProcessing = false;
@@ -314,92 +331,92 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
   Widget build(BuildContext context) {
 
     _screenSize = MediaQuery.of(context).size;
+    if(_isDeviceMoving || !_isCorrectDevicePosition){
+      _dims = {};
+    }
 
     if(!_isCorrectDevicePosition){
       _warningMsg = "Please keep your phone vertical!.";
     }
     return Scaffold(
-      backgroundColor: Color(0xFFC7D9E9),
       appBar: AppBar(
-        title: Text("Sample Liveness Check",style: TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF035F9E),
+        title: Text("Liveness Detection"),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
-              const Text(
-                "Liveness Detection",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.blueGrey,
-                  letterSpacing: 2
-                ),
-              ),
-              const SizedBox(height: 50),
-              Center(
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: _warningMsg == null ? Colors.green : const Color.fromARGB(255, 233, 96, 96),
-                      width: 4,
-                      style: BorderStyle.solid
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 40),
+                    const Text(
+                      "Liveness Detection",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 2
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(500)
-                  ),
-                  child: SizedBox(
-                    width: _screenSize!.width * .9,
-                    height: _screenSize!.width * .9,
-                    child: CameraView(
-                      key: _cameraViewKey,
-                      onImage: _detectImage,
-                      customPaint: _customPaint,
-                      cameraStreamProcessDelay: Duration(milliseconds: 300),
-                      skipFrame: () => _isSkipFrame || _isDeviceMoving || !_isCorrectDevicePosition,
+                    const SizedBox(height: 50),
+                    Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: _warningMsg == null ? Colors.green : const Color.fromARGB(255, 233, 96, 96),
+                            width: 4,
+                            style: BorderStyle.solid
+                          ),
+                          borderRadius: BorderRadius.circular(500)
+                        ),
+                        child: SizedBox(
+                          width: _screenSize!.width * .9,
+                          height: _screenSize!.width * .9,
+                          child: CameraView(
+                            key: _cameraViewKey,
+                            onImage: _detectImage,
+                            customPaint: _customPaint,
+                            cameraStreamProcessDelay: Duration(milliseconds: 300),
+                            skipFrame: () => _isSkipFrame || _isDeviceMoving || !_isCorrectDevicePosition,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 40),
-                _warningMsg != null ?
-                  Column(
-                    children: [
+                    const SizedBox(height: 40),
+                    _warningMsg != null ?
                       Text(
                         _warningMsg!,
                         style: TextStyle(
                           color: Colors.red,
-                          fontSize: 16
+                          fontSize: 14
                         ),
-                      ),
-                    ],
-                  ) :
-                  Column(
-                    children: [
-            
-                      const SizedBox(height: 50),
-                      // Image(
-                      //   image: AssetImage(
-                      //     "assets/${_helper.functionalitiesList[_currentStep].instructionImageName}",
-                      //   ),
-                      //   height: 150,
-                      // ),
-                      const SizedBox(height: 15),
+                      ) 
+                      :
                       Text(
                         _challengeList[_currentStep].instruction
                       )
-            
-                    ],
-                  )    
-            ],
-          ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: ResultView(
+                  fields: {},
+                  dims: _dims,
+                  w: _screenSize!.width,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
 }
-
-
