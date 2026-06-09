@@ -243,12 +243,12 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
 
     try {
 
-      final startAt = DateTime.now();
+      final startDetectFaceDate = DateTime.now();
       _dims = {};
 
       final faces = await _faceDetector.processImage(payload.inputImage);
 
-      _dims[ModelType.googleMLKit] = DateTime.now().difference(startAt).inMilliseconds;
+      _dims[ModelType.googleMLKit] = DateTime.now().difference(startDetectFaceDate).inMilliseconds;
 
       // 
       _faceValidation(faces);
@@ -256,6 +256,7 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
       final bx = faces[0].boundingBox;
 
       final faceContour = Rect.fromLTRB(bx.left, bx.top, bx.right,bx.bottom);
+      final startDetectMaskDate = DateTime.now();
       final maskResult = await MaskDetector.detect(
         payload.yuvBytes, 
         imageWidth: payload.imageWidth.toDouble(), 
@@ -264,14 +265,13 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
         rotation: payload.rotation, 
         bytesPerRow: payload.bytesPerRow
       );
-
-      final total = DateTime.now().difference(startAt).inMilliseconds;
-      _dims[ModelType.maskDetector] = total - (_dims[ModelType.googleMLKit] ?? 0);
+      _dims[ModelType.maskDetector] = DateTime.now().difference(startDetectMaskDate).inMilliseconds;
 
       if(maskResult.hasMask){
         throw LivenessCheckException("Please turn off your mask!.");
       }
 
+      final startPassiveLivenessDate = DateTime.now();
       final confidenceScore = await FaceAntiSpoofingDetector.detect(
         yuvBytes: payload.yuvBytes, 
         previewWidth: payload.imageWidth, 
@@ -280,16 +280,11 @@ class _LivenessCheckPageState extends State<LivenessCheckPage> {
         faceContour: faceContour
       );
 
-      final finalDuration = DateTime.now().difference(startAt).inMilliseconds;
-      _dims[ModelType.faceAntiSpoofingDetector] = finalDuration - (_dims[ModelType.maskDetector] ?? 0);
+      _dims[ModelType.faceAntiSpoofingDetector] = DateTime.now().difference(startPassiveLivenessDate).inMilliseconds;
       
       if(confidenceScore == null || confidenceScore < .95){
         throw LivenessCheckException("A real person is required for liveness verification.");
       }
-      
-      log("============================");
-      log("duration : ${DateTime.now().difference(startAt).inMilliseconds} ms");
-      log("============================");
 
       // capture face
       if(_cameraFrameCaptured == null){
