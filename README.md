@@ -13,7 +13,7 @@ This is where liveness detection comes in a technology designed to protect ident
 <br>
 <br>
 
-![Liveness Detection Image](/images/liveness_detection_demo.png)
+![demo.png](https://horleng.vercel.app/images/liveness_detection_demo.png)
 
 <br>
 
